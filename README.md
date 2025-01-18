@@ -24,3 +24,8 @@ A simple [Voxel Space](https://github.com/s-macke/VoxelSpace) renderer written i
 | Shift  | Go Down      |
 | Comma  | Prev Map     |
 | Period | Next Map     |
+
+## Screenshots
+
+![Screenshot of a grassy area with a pyramid](images/image_01.png)
+![Screenshot of a mountainous area full of magma](images/image_02.png)
