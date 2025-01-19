@@ -163,10 +163,13 @@ fn inner_init() !void {
             const map_path_slice = try map_path.toOwnedSlice();
 
             if (std.mem.eql(u8, map_file.name, "heightmap.png")) {
-                map_data.height_map = try zigimg.Image.fromFilePath(std.heap.page_allocator, map_path_slice);
+                var height_map = try zigimg.Image.fromFilePath(std.heap.page_allocator, map_path_slice);
+                try height_map.convert(.grayscale8);
+
+                map_data.height_map = height_map;
             } else {
                 var color_map = try zigimg.Image.fromFilePath(std.heap.page_allocator, map_path_slice);
-                try color_map.convert(.rgba32);
+                try color_map.convert(.rgb24);
 
                 try color_maps.append(.{
                     .name = try std.heap.page_allocator.dupe(u8, map_file.name),
@@ -322,7 +325,7 @@ fn get_heightmap_value(x: isize, y: isize) f32 {
 
     const index = wrapped_y * state.map_data[state.current_map].height_map.width + wrapped_x;
 
-    return @as(f32, @floatFromInt(state.map_data[state.current_map].height_map.pixels.grayscale8[index].value)) * 1.5;
+    return @floatFromInt(state.map_data[state.current_map].height_map.pixels.grayscale8[index].value);
 }
 
 fn get_color(x: isize, y: isize) sg.Color {
@@ -331,13 +334,13 @@ fn get_color(x: isize, y: isize) sg.Color {
 
     const index = wrapped_y * state.map_data[state.current_map].height_map.width + wrapped_x;
 
-    const color = state.map_data[state.current_map].color_maps[0].data.pixels.rgba32[index];
+    const color = state.map_data[state.current_map].color_maps[0].data.pixels.rgb24[index];
 
     return .{
         .r = @as(f32, @floatFromInt(color.r)) / 255.0,
         .g = @as(f32, @floatFromInt(color.g)) / 255.0,
         .b = @as(f32, @floatFromInt(color.b)) / 255.0,
-        .a = @as(f32, @floatFromInt(color.a)) / 255.0,
+        .a = 1.0,
     };
 }
 
@@ -370,11 +373,14 @@ fn render(p: Point, phi: f32, height: i32, horizon: i32, scale_height: i32, dist
         const dy = (pright.y - pleft.y) / HEIGHT;
 
         for (0..WIDTH) |i| {
-            const height_on_screen = (@as(f32, @floatFromInt(height)) - get_heightmap_value(@as(i32, @intFromFloat(pleft.x)), @as(i32, @intFromFloat(pleft.y)))) / z * @as(f32, @floatFromInt(scale_height)) + @as(f32, @floatFromInt(horizon));
+            const heightmap_value = get_heightmap_value(@intFromFloat(pleft.x), @intFromFloat(pleft.y)) * 1.5;
+            const height_on_screen = (@as(f32, @floatFromInt(height)) - heightmap_value) / z * @as(f32, @floatFromInt(scale_height)) + @as(f32, @floatFromInt(horizon));
+
             if (height_mask[i] > height_on_screen) {
-                draw_vertical_line(i, @as(i32, @intFromFloat(height_on_screen)), @as(i32, @intFromFloat(height_mask[i])), get_color(@as(i32, @intFromFloat(pleft.x)), @as(i32, @intFromFloat(pleft.y))));
+                draw_vertical_line(i, @intFromFloat(height_on_screen), @intFromFloat(height_mask[i]), get_color(@intFromFloat(pleft.x), @intFromFloat(pleft.y)));
                 height_mask[i] = height_on_screen;
             }
+
             pleft.x += dx;
             pleft.y += dy;
         }
