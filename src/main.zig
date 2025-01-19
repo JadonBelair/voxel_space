@@ -24,7 +24,7 @@ const state = struct {
     
     var phi: f32 = 0.0;
     var pos: Point = .{.x = 0.0, .y = 0.0};
-    var height: i32 = 150;
+    var height: f32 = 150.0;
 };
 
 const KEYS = enum {
@@ -190,6 +190,8 @@ fn inner_init() !void {
 
 export fn frame() void {
 
+    const dt: f32 = @floatCast(sapp.frameDuration());
+
     state.pixel_buffer = [_]u8 {0} ** (WIDTH*4*HEIGHT);
 
     if (is_key_just_pressed(KEYS.COMMA)) {
@@ -201,52 +203,54 @@ export fn frame() void {
         std.debug.print("Now showing {s}\n", .{ state.map_data[state.current_map].map_name });
     }
 
+    const turn_speed = 1.0;
     if (is_key_down(KEYS.Q)) {
-        state.phi += 0.01;
+        state.phi += turn_speed * dt;
     }
 
     if (is_key_down(KEYS.E)) {
-        state.phi -= 0.01;
+        state.phi -= turn_speed * dt;
     }
 
+    const move_speed = 100.0;
     if (is_key_down(KEYS.W)) {
         const dx = -@sin(state.phi);
         const dy = -@cos(state.phi);
 
-        state.pos.x += dx * 1.2;
-        state.pos.y += dy * 1.2;
+        state.pos.x += dx * move_speed * dt;
+        state.pos.y += dy * move_speed * dt;
     }
 
     if (is_key_down(KEYS.S)) {
         const dx = @sin(state.phi);
         const dy = @cos(state.phi);
 
-        state.pos.x += dx * 1.2;
-        state.pos.y += dy * 1.2;
+        state.pos.x += dx * move_speed * dt;
+        state.pos.y += dy * move_speed * dt;
     }
 
     if (is_key_down(KEYS.A)) {
         const dx = -@cos(state.phi);
         const dy = @sin(state.phi);
 
-        state.pos.x += dx * 1.2;
-        state.pos.y += dy * 1.2;
+        state.pos.x += dx * move_speed * dt;
+        state.pos.y += dy * move_speed * dt;
     }
 
     if (is_key_down(KEYS.D)) {
         const dx = @cos(state.phi);
         const dy = -@sin(state.phi);
 
-        state.pos.x += dx * 1.2;
-        state.pos.y += dy * 1.2;
+        state.pos.x += dx * move_speed * dt;
+        state.pos.y += dy * move_speed * dt;
     }
 
     if (is_key_down(KEYS.SPACE)) {
-        state.height += 1;
+        state.height += move_speed * dt;
     }
 
     if (is_key_down(KEYS.SHIFT)) {
-        state.height -= 1;
+        state.height -= move_speed * dt;
     }
 
     render(state.pos, state.phi, state.height, 120, 120 , 1000);
@@ -353,7 +357,7 @@ fn draw_vertical_line(x: usize, top: isize, bottom: isize, color: sg.Color) void
 }
 
 // lifted pretty much straight from https://github.com/s-macke/VoxelSpace
-fn render(p: Point, phi: f32, height: i32, horizon: i32, scale_height: i32, distance: i32) void {
+fn render(p: Point, phi: f32, height: f32, horizon: i32, scale_height: i32, distance: i32) void {
     const sinphi = @sin(phi);
     const cosphi = @cos(phi);
 
@@ -374,8 +378,9 @@ fn render(p: Point, phi: f32, height: i32, horizon: i32, scale_height: i32, dist
         const dy = (pright.y - pleft.y) / HEIGHT;
 
         for (0..WIDTH) |i| {
-            const heightmap_value = get_heightmap_value(@intFromFloat(pleft.x), @intFromFloat(pleft.y)) * 1.5;
-            const height_on_screen = (@as(f32, @floatFromInt(height)) - heightmap_value) / z * @as(f32, @floatFromInt(scale_height)) + @as(f32, @floatFromInt(horizon));
+            const heightmap_value = get_heightmap_value(@intFromFloat(pleft.x), @intFromFloat(pleft.y));
+            const mapped_heightmap_value = heightmap_value / 255.0 * @as(f32, @floatFromInt(HEIGHT));
+            const height_on_screen = (height - mapped_heightmap_value) / z * @as(f32, @floatFromInt(scale_height)) + @as(f32, @floatFromInt(horizon));
 
             if (height_mask[i] > height_on_screen) {
                 draw_vertical_line(i, @intFromFloat(height_on_screen), @intFromFloat(height_mask[i]), get_color(@intFromFloat(pleft.x), @intFromFloat(pleft.y)));
