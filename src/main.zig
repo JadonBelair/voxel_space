@@ -128,7 +128,7 @@ export fn init() void {
 
     state.pass_action.colors[0] = .{
         .load_action = .CLEAR,
-        .clear_value = .{ .r = 0.03, .g = 0.0, .b = 0.04, .a = 1.0 },
+        .clear_value = .{ .r = 0.1, .g = 0.2, .b = 0.3, .a = 1.0 },
     };
 
     inner_init() catch return;
@@ -249,7 +249,7 @@ export fn frame() void {
         state.height -= 1;
     }
 
-    render(state.pos, state.phi, state.height, 120, 120 , 600);
+    render(state.pos, state.phi, state.height, 120, 120 , 1000);
 
     var texture_data: sg.ImageData = .{};
     texture_data.subimage[0][0] = sg.asRange(&state.pixel_buffer);
@@ -352,6 +352,7 @@ fn draw_vertical_line(x: usize, top: isize, bottom: isize, color: sg.Color) void
     }
 }
 
+// lifted pretty much straight from https://github.com/s-macke/VoxelSpace
 fn render(p: Point, phi: f32, height: i32, horizon: i32, scale_height: i32, distance: i32) void {
     const sinphi = @sin(phi);
     const cosphi = @cos(phi);

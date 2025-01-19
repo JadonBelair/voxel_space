@@ -25,11 +25,6 @@ A simple [Voxel Space](https://github.com/s-macke/VoxelSpace) renderer written i
 | Comma  | Prev Map     |
 | Period | Next Map     |
 
-## Issues
-
-For some reason certain maps have a strange visual bug
-![Screenshot showcasing weird color stripes on a map](images/visual_bug_image.png)
-
 ## Screenshots
 
 ![Screenshot of a grassy area with a pyramid](images/image_01.png)
