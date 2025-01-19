@@ -1,6 +1,6 @@
 # voxel space renderer
 
-A simple [Voxel Space](https://github.com/s-macke/VoxelSpace) renderer written in [Zig](https://ziglang.org)
+A simple [Voxel Space](https://github.com/s-macke/VoxelSpace) renderer written in [Zig](https://ziglang.org) 0.13.0
 
 ## Features
 
