@@ -131,17 +131,6 @@ export fn init() void {
         .clear_value = .{ .r = 0.03, .g = 0.0, .b = 0.04, .a = 1.0 },
     };
 
-    for (0..HEIGHT) |y| {
-        for (0..WIDTH) |x| {
-            set_pixel(x, y, .{
-                .r = @as(f32, @floatFromInt(x)) / @as(f32, @floatFromInt(WIDTH)),
-                .g = 0.0,
-                .b = @as(f32, @floatFromInt(y)) / @as(f32, @floatFromInt(HEIGHT)),
-                .a = 1.0
-            });
-        }
-    }
-
     inner_init() catch return;
 }
 
@@ -202,9 +191,11 @@ export fn frame() void {
 
     if (is_key_just_pressed(KEYS.COMMA)) {
         state.current_map = @as(u32, @intCast(@mod(@as(i32, @intCast(state.current_map)) - 1, @as(i32, @intCast(state.map_data.len)))));
+        std.debug.print("Now showing {s}\n", .{ state.map_data[state.current_map].map_name });
     }
     if (is_key_just_pressed(KEYS.PERIOD)) {
         state.current_map = @as(u32, @intCast(@mod(@as(i32, @intCast(state.current_map)) + 1, @as(i32, @intCast(state.map_data.len)))));
+        std.debug.print("Now showing {s}\n", .{ state.map_data[state.current_map].map_name });
     }
 
     if (is_key_down(KEYS.Q)) {
@@ -365,14 +356,14 @@ fn render(p: Point, phi: f32, height: i32, horizon: i32, scale_height: i32, dist
     var height_mask: [WIDTH]f32 = [_]f32 {HEIGHT} ** WIDTH;
     var dz: f32 = 1.0;
     var z: f32 = 1.0;
-    while (z <= @as(f32, @floatFromInt(distance))) : ({z += dz; dz += 0.0;}) {
+    while (z <= @as(f32, @floatFromInt(distance))) : ({z += dz; dz += 0.05;}) {
         var pleft: Point = .{
-            .x = (cosphi*-z + sinphi*-z) + p.x,
-            .y = (sinphi*z + cosphi*-z) + p.y,
+            .x = (-cosphi*z - sinphi*z) + p.x,
+            .y = ( sinphi*z - cosphi*z) + p.y,
         };
         const pright: Point = .{
-            .x = (cosphi*z + sinphi*-z) + p.x,
-            .y = (sinphi*-z + cosphi*-z) + p.y,
+            .x = ( cosphi*z - sinphi*z) + p.x,
+            .y = (-sinphi*z - cosphi*z) + p.y,
         };
 
         const dx = (pright.x - pleft.x) / WIDTH;
