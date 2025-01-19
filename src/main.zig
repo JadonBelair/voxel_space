@@ -9,8 +9,13 @@ const zigimg = @import("zigimg");
 
 const shader = @import("shader/texture.glsl.zig");
 
-const WIDTH: u32 = 800;
-const HEIGHT: u32 = 600;
+const ASPECT_RATIO: f32 = 16.0/9.0;
+
+const HEIGHT: u32 = 300;
+const WIDTH: u32 = @round(ASPECT_RATIO * HEIGHT);
+
+const WINDOW_HEIGHT: u32 = 720;
+const WINDOW_WIDTH: u32 = @round(ASPECT_RATIO * WINDOW_HEIGHT);
 
 const state = struct {
     var pass_action: sg.PassAction = .{};
@@ -253,7 +258,7 @@ export fn frame() void {
         state.height -= move_speed * dt;
     }
 
-    render(state.pos, state.phi, state.height, 120, 120 , 1000);
+    render(state.pos, state.phi, state.height, 120, 200, 1000);
 
     var texture_data: sg.ImageData = .{};
     texture_data.subimage[0][0] = sg.asRange(&state.pixel_buffer);
@@ -357,30 +362,34 @@ fn draw_vertical_line(x: usize, top: isize, bottom: isize, color: sg.Color) void
 }
 
 // lifted pretty much straight from https://github.com/s-macke/VoxelSpace
-fn render(p: Point, phi: f32, height: f32, horizon: i32, scale_height: i32, distance: i32) void {
+fn render(p: Point, phi: f32, height: f32, horizon: f32, scale_height: f32, distance: f32) void {
     const sinphi = @sin(phi);
     const cosphi = @cos(phi);
 
     var height_mask: [WIDTH]f32 = [_]f32 {HEIGHT} ** WIDTH;
     var dz: f32 = 1.0;
     var z: f32 = 1.0;
-    while (z <= @as(f32, @floatFromInt(distance))) : ({z += dz; dz += 0.05;}) {
+    while (z <= distance) : ({z += dz; dz += 0.0;}) {
         var pleft: Point = .{
-            .x = (-cosphi*z - sinphi*z) + p.x,
-            .y = ( sinphi*z - cosphi*z) + p.y,
+            .x = (-cosphi*z - sinphi*z),
+            .y = ( sinphi*z - cosphi*z),
         };
         const pright: Point = .{
-            .x = ( cosphi*z - sinphi*z) + p.x,
-            .y = (-sinphi*z - cosphi*z) + p.y,
+            .x = ( cosphi*z - sinphi*z),
+            .y = (-sinphi*z - cosphi*z),
         };
 
         const dx = (pright.x - pleft.x) / WIDTH;
         const dy = (pright.y - pleft.y) / HEIGHT;
 
+        pleft.x += p.x;
+        pleft.y += p.y;
+
+        const inv_z = 1.0 / z * scale_height;
+
         for (0..WIDTH) |i| {
             const heightmap_value = get_heightmap_value(@intFromFloat(pleft.x), @intFromFloat(pleft.y));
-            const mapped_heightmap_value = heightmap_value / 255.0 * @as(f32, @floatFromInt(HEIGHT));
-            const height_on_screen = (height - mapped_heightmap_value) / z * @as(f32, @floatFromInt(scale_height)) + @as(f32, @floatFromInt(horizon));
+            const height_on_screen = (height - heightmap_value) * inv_z + horizon;
 
             if (height_mask[i] > height_on_screen) {
                 draw_vertical_line(i, @intFromFloat(height_on_screen), @intFromFloat(height_mask[i]), get_color(@intFromFloat(pleft.x), @intFromFloat(pleft.y)));
@@ -408,8 +417,8 @@ pub fn main() !void {
         .event_cb = event,
         .cleanup_cb = cleanup,
         .window_title = "Voxel Space Renderer",
-        .width = WIDTH,
-        .height = HEIGHT,
+        .width = WINDOW_WIDTH,
+        .height = WINDOW_HEIGHT,
         .icon = .{ .sokol_default = true },
         .logger = .{ .func = slog.func },
     });
